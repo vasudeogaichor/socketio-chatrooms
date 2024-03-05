@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
         chatRoomUsers = allUsers.filter((user) => user.room === room);
         io.to(room).emit('chatroom_users', chatRoomUsers);
         io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
-    });
+            });
 
     socket.on('send_message', (data) => {
         const { room } = data;
@@ -88,8 +88,12 @@ io.on('connection', (socket) => {
                 callback(null, data);
             }
         });
-        
     });
+
+    socket.on('request_available_rooms', (callback) => {
+        console.log('requested available rooms')
+        callback([...new Set(allUsers.map(user => user.room))])
+    })
 });
 
 // Start server
