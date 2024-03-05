@@ -91,7 +91,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('request_available_rooms', (callback) => {
-        console.log('requested available rooms')
         callback([...new Set(allUsers.map(user => user.room))])
     })
 });
