@@ -1,5 +1,6 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
+const { writeFile, readFile } = require('fs');
 
 const BOT = 'bot';
 let allUsers = [];
@@ -24,7 +25,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnecting', () => {
         const [userId, room] = [...socket.rooms]
-        const username = allUsers.find(user => user.id === userId)?.username; 
+        const username = allUsers.find(user => user.id === userId)?.username;
         io.to(room).emit('receive_message', {
             message: `${username} has left the chat room`,
             username: BOT,
@@ -54,15 +55,40 @@ io.on('connection', (socket) => {
         allUsers.push({ id: socket.id, username, room });
         chatRoomUsers = allUsers.filter((user) => user.room === room);
         io.to(room).emit('chatroom_users', chatRoomUsers);
-        console.log('sending all available rooms')
-        console.log('allUsers - ', allUsers)
         io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
-        console.log('sent')
     });
 
     socket.on('send_message', (data) => {
         const { room } = data;
         io.to(room).emit('receive_message', data);
+    });
+
+    socket.on('upload_file', (file, ext, username, room, callback) => {
+        const newFileName = `${__dirname}/tmp/uploads/${Date.now()}.${ext}`;
+        writeFile(newFileName, file, (err) => {
+            callback({ message: err ? "failure" : "success" });
+        });
+        io.to(room).emit('receive_message', {
+            message: `${username} uploaded a file`,
+            username: BOT
+        });
+
+        io.to(room).emit('receive_message', {
+            username: username,
+            fileName: `${newFileName.split('/').slice(-1)[0]}`
+        });
+    });
+
+    socket.on('request_file', (fileName, callback) => {
+        const filePath = `${__dirname}/tmp/uploads/${fileName}`;
+        readFile(filePath, (err, data) => {
+            if (err) {
+                return callback(err);
+            } else {
+                callback(null, data);
+            }
+        });
+        
     });
 });
 
