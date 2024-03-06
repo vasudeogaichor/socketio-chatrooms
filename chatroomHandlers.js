@@ -27,14 +27,15 @@ module.exports = (io, socket) => {
 
     socket.on('join_room', (data, callback) => {
         const { username, room, isNewRoom } = data;
-
         let currentRooms = allUsers.map(user => user.room);
         if (isNewRoom && currentRooms.includes(room)) {
             return callback('Room already exists');
         } else {
-            socket.join(room)
-            callback(null, 'Room created successfully');
+            socket.join(room);
+            callback(null, 'Room joined successfully');
         }
+
+        io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
 
         io.to(room).emit('receive_message', {
             message: `${username} has joined the chat room`,
@@ -44,7 +45,6 @@ module.exports = (io, socket) => {
         allUsers.push({ id: socket.id, username, room });
         chatRoomUsers = allUsers.filter((user) => user.room === room);
         io.to(room).emit('chatroom_users', chatRoomUsers);
-        io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
     });
 
     socket.on('send_message', (data) => {
