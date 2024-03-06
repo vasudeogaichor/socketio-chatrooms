@@ -81,5 +81,9 @@ module.exports = (io, socket) => {
 
     socket.on('request_available_rooms', (callback) => {
         callback([...new Set(allUsers.map(user => user.room))])
-    })
+    });
+
+    socket.on('leave_room', (socketId, room) => {
+        allUsers = allUsers.filter(user => (user.id !== socketId && user.room !== room));
+    });
 }
