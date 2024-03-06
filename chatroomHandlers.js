@@ -31,20 +31,21 @@ module.exports = (io, socket) => {
         if (isNewRoom && currentRooms.includes(room)) {
             return callback('Room already exists');
         } else {
-            socket.join(room);
             callback(null, 'Room joined successfully');
+            socket.join(room);
         }
 
+
         io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
+
+        allUsers.push({ id: socket.id, username, room });
+        chatRoomUsers = allUsers.filter((user) => user.room === room);
+        io.to(room).emit('chatroom_users', chatRoomUsers);
 
         io.to(room).emit('receive_message', {
             message: `${username} has joined the chat room`,
             username: BOT,
         });
-
-        allUsers.push({ id: socket.id, username, room });
-        chatRoomUsers = allUsers.filter((user) => user.room === room);
-        io.to(room).emit('chatroom_users', chatRoomUsers);
     });
 
     socket.on('send_message', (data) => {
