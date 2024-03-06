@@ -35,7 +35,6 @@ module.exports = (io, socket) => {
             socket.join(room);
         }
 
-
         io.emit('chatrooms', [...new Set(allUsers.map(user => user.room))]);
 
         allUsers.push({ id: socket.id, username, room });
@@ -86,5 +85,10 @@ module.exports = (io, socket) => {
 
     socket.on('leave_room', (socketId, room) => {
         allUsers = allUsers.filter(user => (user.id !== socketId && user.room !== room));
+    });
+
+    socket.on('typing', ({ room, username }) => {
+        console.log(room ,username, 'typeing')
+        socket.to(room).emit('user_typing', { username });
     });
 }
