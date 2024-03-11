@@ -47,6 +47,11 @@ module.exports = (io, socket) => {
             message: `${username} has joined the chat room`,
             username: BOT,
         });
+
+        let existingMeeting = allMeetings.find(ele => ele.roomName === room)
+        if (existingMeeting) {
+            io.to(room).emit('meeting_created', existingMeeting);
+        }
     });
 
     socket.on('send_message', (data) => {
@@ -93,6 +98,7 @@ module.exports = (io, socket) => {
         socket.to(room).emit('user_typing', { username });
     });
 
+    // TODO - if possible move meeting related handlers to separate file
     socket.on('create_meeting', ({ room, username }, callback) => {
         let existingMeeting = allMeetings.find(ele => ele.roomName == room);
         if (existingMeeting) {
