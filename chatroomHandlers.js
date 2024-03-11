@@ -2,6 +2,7 @@ const { writeFile, readFile } = require('fs');
 
 const BOT = 'bot';
 let allUsers = [];
+let allMeetings = [];
 
 module.exports = (io, socket) => {
     console.log('User connected ', socket.id);
@@ -26,6 +27,7 @@ module.exports = (io, socket) => {
     })
 
     socket.on('join_room', (data, callback) => {
+        // TODO - return any ongoing meeting in the room
         const { username, room, isNewRoom } = data;
         let currentRooms = allUsers.map(user => user.room);
         if (isNewRoom && currentRooms.includes(room)) {
@@ -88,7 +90,36 @@ module.exports = (io, socket) => {
     });
 
     socket.on('typing', ({ room, username }) => {
-        console.log(room ,username, 'typeing')
         socket.to(room).emit('user_typing', { username });
     });
-}
+
+    socket.on('create_meeting', ({ room, username }, callback) => {
+        let existingMeeting = allMeetings.find(ele => ele.roomName == room);
+        if (existingMeeting) {
+            return callback(true);
+        }
+
+        let newMeeting = {
+            roomName: room,
+            meetingName: `${room}-meeting`,
+            members: [username],
+            created_by: username
+        };
+        allMeetings.push(newMeeting)
+        io.to(room).emit('meeting_created', newMeeting)
+        io.to(room).emit('receive_message', {
+            username: BOT,
+            message: `${username} has started a meeting.`
+        })
+    });
+
+    socket.on('join_meeting', ({ meetingName, username }, callback) => {
+        let existingMeeting = allMeetings.find(ele => ele.meetingName == meetingName);
+        if (!existingMeeting) {
+            return callback(true);
+        }
+
+        existingMeeting.members.push(username);
+        io.to(existingMeeting.roomName).emit('meeting_joined', existingMeeting);
+    });
+};
