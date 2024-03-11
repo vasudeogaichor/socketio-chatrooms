@@ -103,7 +103,7 @@ module.exports = (io, socket) => {
             roomName: room,
             meetingName: `${room}-meeting`,
             members: [username],
-            created_by: username
+            createdBy: username
         };
         allMeetings.push(newMeeting)
         io.to(room).emit('meeting_created', newMeeting)
@@ -121,5 +121,49 @@ module.exports = (io, socket) => {
 
         existingMeeting.members.push(username);
         io.to(existingMeeting.roomName).emit('meeting_joined', existingMeeting);
+        io.to(existingMeeting.roomName).emit('receive_message', {
+            username: BOT,
+            message: `${username} has joined the meeting.`
+        })
+    });
+
+    socket.on('end_meeting', ({ meetingName }, callback) => {
+        let existingMeeting = allMeetings.find(ele => ele.meetingName === meetingName)
+        if (!existingMeeting) {
+            return callback(true);
+        }
+        try {
+            allMeetings = allMeetings.filter(ele => ele.meetingName !== existingMeeting.meetingName);
+            io.to(existingMeeting.roomName).emit('meeting_ended');
+            io.to(existingMeeting.roomName).emit('receive_message', {
+                username: BOT,
+                message: `${existingMeeting.createdBy} has ended the meeting`
+            });
+            return callback(false)
+        } catch (error) {
+            return callback(true, error)
+        }
+    });
+
+    socket.on('leave_meeting', ({ meetingName, username }, callback) => {
+        let existingMeeting = allMeetings.find(ele => ele.meetingName === meetingName)
+        if (!existingMeeting) {
+            return callback(true);
+        } else if (!existingMeeting.members.includes(username)) {
+            return callback(true);
+        }
+
+        try {
+            existingMeeting.members = existingMeeting.members.filter(ele => ele !== username)
+            io.to(existingMeeting.roomName).emit('meeting_left', existingMeeting);
+            io.to(existingMeeting.roomName).emit('receive_message', {
+                username: BOT,
+                message: `${username} has left the meeting`
+            });
+
+            return callback(false)
+        } catch (error) {
+            return callback(true, error)
+        }
     });
 };
