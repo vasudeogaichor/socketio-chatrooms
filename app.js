@@ -6,7 +6,7 @@ const server = restify.createServer();
 
 const io = socketIo(server.server, {
     cors: {
-        origin: "http://localhost:3000"
+        origin: "http://localhost:8501"
     }
 });
 
@@ -18,7 +18,7 @@ const onConnection = (socket) => {
 io.on('connection', onConnection);
 
 // Start server
-const PORT = 5000;
+const PORT = 8502;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
