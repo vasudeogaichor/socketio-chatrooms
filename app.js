@@ -6,7 +6,7 @@ const server = restify.createServer();
 
 const io = socketIo(server.server, {
     cors: {
-        origin: "http://localhost:8501"
+        origin: "http://192.168.0.20:8501"
     }
 });
 
