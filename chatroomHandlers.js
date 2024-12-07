@@ -172,4 +172,20 @@ module.exports = (io, socket) => {
             return callback(true, error)
         }
     });
+
+    socket.on('message', (message, meetingName, username, time) => {
+        console.log('meetingName - ', meetingName, username, time)
+        console.log('messagetype - ', message.type)
+        switch (message.type) {
+            case 'audio-offer':
+            case 'audio-answer':
+            case 'audio-candidate':
+                // Broadcast the message to all other clients in the same room
+                io.to(meetingName).emit('message', message);
+                break;
+            default:
+                console.log('Unhandled message type:', message.type);
+                break;
+        }
+    });
 };
